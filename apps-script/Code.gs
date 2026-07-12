@@ -22,6 +22,41 @@
  */
 
 var ROSTER_HEADERS = ['First', 'Last', 'Email', 'UNB ID', 'Default comp', 'Region'];
+var SUBMISSION_HEADERS = [
+  'Received', 'Submitted by', 'Email', 'Blitz', 'Start', 'End',
+  'Manager', 'ISP(s)', '# Reps', 'Reps (name / ID / comp / change)',
+  'Manager overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
+];
+
+/* ------------------------------------------------------------------ *
+ * onOpen — adds a menu so you can build the tabs from a blank sheet   *
+ * without waiting for the first submission.                           *
+ * ------------------------------------------------------------------ */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Unbreakable Intake')
+    .addItem('Set up / repair tabs', 'setupSheet')
+    .addToUi();
+}
+
+// Idempotent: creates the Submissions and Roster tabs with headers only if
+// they are missing. Never touches existing rows, so it is safe to re-run.
+function setupSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
+  ensureTab(ss, 'Roster', ROSTER_HEADERS);
+  SpreadsheetApp.getActive().toast('Tabs are ready. Deploy → Web app, then connect the form.', 'Unbreakable Intake', 5);
+}
+
+function ensureTab(ss, name, headers) {
+  var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
 
 /* ------------------------------------------------------------------ *
  * doGet — serves the Roster tab as JSONP so the static site can load  *
@@ -64,17 +99,7 @@ function doPost(e) {
   lock.waitLock(30000); // avoid collisions if two people submit at once
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Submissions') || ss.insertSheet('Submissions');
-
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        'Received', 'Submitted by', 'Email', 'Blitz', 'Start', 'End',
-        'Manager', 'ISP(s)', '# Reps', 'Reps (name / ID / comp / change)',
-        'Manager overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
-      ]);
-      sheet.getRange(1, 1, 1, 15).setFontWeight('bold');
-      sheet.setFrozenRows(1);
-    }
+    var sheet = ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
 
     var d = JSON.parse(e.postData.contents);
     var b = d.blitz || {};

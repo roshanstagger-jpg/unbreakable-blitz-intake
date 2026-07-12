@@ -36,12 +36,17 @@ on the **Roster** tab.
 
 ### 1. Backend (Google Sheet)
 
-1. Create a Google Sheet. **Extensions → Apps Script**.
-2. Paste [`apps-script/Code.gs`](apps-script/Code.gs), save.
+Fastest path — start from the prebuilt template:
+
+1. Import [`template/Unbreakable-Blitz-Intake-Template.xlsx`](template/Unbreakable-Blitz-Intake-Template.xlsx)
+   into Google Drive (it opens as a Google Sheet). It already has the `Instructions`, `Roster`
+   (seeded with ~54 reps), and `Submissions` tabs. Share with CS to fill the yellow columns
+   (Email, Default comp) and add any missing reps.
+2. **Extensions → Apps Script**, paste [`apps-script/Code.gs`](apps-script/Code.gs), save.
+   (Optional: reload the sheet → **Unbreakable Intake → Set up / repair tabs** to build tabs
+   from scratch — it's non-destructive and never overwrites the roster.)
 3. **Deploy → New deployment → Web app.** Execute as **Me**, access **Anyone**.
 4. Copy the Web App URL (ends in `/exec`).
-5. Add a **Roster** tab with columns: `First`, `Last`, `Email`, `UNB ID`, `Default comp`, `Region`,
-   and seed it once with your existing reps. (If you skip this, the script creates it on first new-rep submission.)
 
 ### 2. Frontend
 
