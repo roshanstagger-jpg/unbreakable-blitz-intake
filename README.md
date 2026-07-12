@@ -40,8 +40,8 @@ Fastest path — start from the prebuilt template:
 
 1. Import [`template/Unbreakable-Blitz-Intake-Template.xlsx`](template/Unbreakable-Blitz-Intake-Template.xlsx)
    into Google Drive (it opens as a Google Sheet). Tabs:
-   - `Roster` — ~54 reps seeded (name / UNB ID / region + a default plan). CS fills the yellow
-     Email column and verifies the plan.
+   - `Roster` — ~54 reps seeded (name / UNB ID / office + a default plan). CS fills the yellow
+     Email + Office columns and verifies the plan.
    - `CompPlans` — Sequifi's rate plans (Rate 150…375, 400 Sub, etc.); the form's comp dropdown reads this.
    - `ISPs` — the six ISPs + config columns; the form's ISP chips read this.
    - `Submissions` — auto-fills, one row per blitz. `Instructions` — the CS guide.

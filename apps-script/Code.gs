@@ -14,14 +14,14 @@
  * TABS this script maintains:
  *   • "Submissions" — one row per blitz submitted.
  *   • "Roster"      — the master rep list. Seed it once (First, Last, Email,
- *                     UNB ID, Default comp, Region). New reps added on the
+ *                     UNB ID, Default plan, Office). New reps added on the
  *                     intake form are appended here automatically.
  *
  * The form loads the roster via doGet (JSONP) and posts blitzes via doPost.
  * Export to Excel anytime: File → Download → Microsoft Excel (.xlsx).
  */
 
-var ROSTER_HEADERS = ['First', 'Last', 'Email', 'UNB ID', 'Default plan', 'Region'];
+var ROSTER_HEADERS = ['First', 'Last', 'Email', 'UNB ID', 'Default plan', 'Office'];
 var COMPPLAN_HEADERS = ['Plan name', 'Rate ($/acct)', 'Holdback %', 'Active'];
 var ISP_HEADERS = ['ISP name', 'Abbr', 'Active', 'Rep-ID column on report', 'Has order #?', 'Phone bonus $', 'Mesh bonus $'];
 var SUBMISSION_HEADERS = [
@@ -138,7 +138,7 @@ function readRoster() {
     .map(function (r) {
       return {
         first: r[0] || '', last: r[1] || '', email: r[2] || '',
-        id: r[3] || '', plan: r[4] || '', region: r[5] || ''
+        id: r[3] || '', plan: r[4] || '', office: r[5] || ''
       };
     });
 }
