@@ -39,9 +39,16 @@ on the **Roster** tab.
 Fastest path — start from the prebuilt template:
 
 1. Import [`template/Unbreakable-Blitz-Intake-Template.xlsx`](template/Unbreakable-Blitz-Intake-Template.xlsx)
-   into Google Drive (it opens as a Google Sheet). It already has the `Instructions`, `Roster`
-   (seeded with ~54 reps), and `Submissions` tabs. Share with CS to fill the yellow columns
-   (Email, Default comp) and add any missing reps.
+   into Google Drive (it opens as a Google Sheet). Tabs:
+   - `Roster` — ~54 reps seeded (name / UNB ID / region + a default plan). CS fills the yellow
+     Email column and verifies the plan.
+   - `CompPlans` — Sequifi's rate plans (Rate 150…375, 400 Sub, etc.); the form's comp dropdown reads this.
+   - `ISPs` — the six ISPs + config columns; the form's ISP chips read this.
+   - `Submissions` — auto-fills, one row per blitz. `Instructions` — the CS guide.
+
+   The form pulls Roster, CompPlans, and ISPs live via `doGet`, so adding a rep, a rate plan, or an
+   ISP is just adding a row — no code change. New reps / new ISPs submitted on the form append back
+   to the `Roster` / `ISPs` tabs automatically.
 2. **Extensions → Apps Script**, paste [`apps-script/Code.gs`](apps-script/Code.gs), save.
    (Optional: reload the sheet → **Unbreakable Intake → Set up / repair tabs** to build tabs
    from scratch — it's non-destructive and never overwrites the roster.)

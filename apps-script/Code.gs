@@ -21,11 +21,34 @@
  * Export to Excel anytime: File → Download → Microsoft Excel (.xlsx).
  */
 
-var ROSTER_HEADERS = ['First', 'Last', 'Email', 'UNB ID', 'Default comp', 'Region'];
+var ROSTER_HEADERS = ['First', 'Last', 'Email', 'UNB ID', 'Default plan', 'Region'];
+var COMPPLAN_HEADERS = ['Plan name', 'Rate ($/acct)', 'Holdback %', 'Active'];
+var ISP_HEADERS = ['ISP name', 'Abbr', 'Active', 'Rep-ID column on report', 'Has order #?', 'Phone bonus $', 'Mesh bonus $'];
 var SUBMISSION_HEADERS = [
   'Received', 'Submitted by', 'Email', 'Blitz', 'Start', 'End',
   'Manager', 'ISP(s)', '# Reps', 'Reps (name / ID / comp / change)',
   'Manager overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
+];
+
+// Defaults seeded when a tab is created from a blank sheet (the .xlsx template
+// already ships these). Editing the tabs in the sheet overrides them.
+var DEFAULT_ISPS = [
+  ['Gonetspeed', 'GNS', 'yes', '', 'yes', '', ''],
+  ['Brightspeed', 'BS', 'yes', '', 'yes', '', ''],
+  ['Joink / CTI', 'CTI', 'yes', '', 'yes', '', ''],
+  ['Fiber First', 'FF', 'yes', '', 'yes', '', ''],
+  ['Lightcurve', 'LC', 'yes', '', 'yes', '', ''],
+  ['Fatbeam', 'FB', 'yes', '', 'yes', '', '']
+];
+var DEFAULT_COMPPLANS = [
+  ['Rate 150', 150, 10, 'yes'], ['Rate 175', 175, 10, 'yes'], ['Rate 200', 200, 10, 'yes'],
+  ['Rate 210', 210, 10, 'yes'], ['Rate 225', 225, 10, 'yes'], ['Rate 240', 240, 10, 'yes'],
+  ['Rate 250', 250, 10, 'yes'], ['Rate 265', 265, 10, 'yes'], ['Rate 275', 275, 10, 'yes'],
+  ['Rate 280', 280, 10, 'yes'], ['Rate 290', 290, 10, 'yes'], ['Rate 300', 300, 10, 'yes'],
+  ['Rate 300 AW', 300, 10, 'yes'], ['Rate 325', 325, 10, 'yes'], ['Rate 350', 350, 10, 'yes'],
+  ['Rate 375', 375, 10, 'yes'], ['400 Sub', 400, 10, 'yes'], ['400 - Sub Dealer', 400, 10, 'yes'],
+  ['400 - Sub Dealer No Holdback', 400, 0, 'yes'], ['Sub Dealer', '', 10, 'yes'],
+  ["Landon's Comp Plan", '', 10, 'yes'], ['Enlite Plan', '', 0, 'yes'], ['Top G Plan', '', 0, 'yes']
 ];
 
 /* ------------------------------------------------------------------ *
@@ -39,23 +62,49 @@ function onOpen() {
     .addToUi();
 }
 
-// Idempotent: creates the Submissions and Roster tabs with headers only if
-// they are missing. Never touches existing rows, so it is safe to re-run.
+// Idempotent: creates the tabs with headers (and seeds CompPlans / ISPs) only
+// where missing. Never touches existing rows, so it is safe to re-run.
 function setupSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
   ensureTab(ss, 'Roster', ROSTER_HEADERS);
+  ensureTab(ss, 'CompPlans', COMPPLAN_HEADERS, DEFAULT_COMPPLANS);
+  ensureTab(ss, 'ISPs', ISP_HEADERS, DEFAULT_ISPS);
   SpreadsheetApp.getActive().toast('Tabs are ready. Deploy → Web app, then connect the form.', 'Unbreakable Intake', 5);
 }
 
-function ensureTab(ss, name, headers) {
+function ensureTab(ss, name, headers, seedRows) {
   var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
     sheet.setFrozenRows(1);
+    (seedRows || []).forEach(function (row) { sheet.appendRow(row); });
   }
   return sheet;
+}
+
+// Generic reader: returns the tab's data rows as arrays (header dropped).
+function readRows(name) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  var values = sheet.getDataRange().getValues();
+  values.shift();
+  return values;
+}
+
+function readCompPlans() {
+  return readRows('CompPlans')
+    .filter(function (r) { return String(r[0]).trim() !== '' && String(r[3]).toLowerCase() !== 'no'; })
+    .map(function (r) { return { name: r[0], rate: r[1], holdback: r[2] }; });
+}
+
+function readISPs() {
+  return readRows('ISPs')
+    .filter(function (r) { return String(r[0]).trim() !== '' && String(r[2]).toLowerCase() !== 'no'; })
+    .map(function (r) {
+      return { name: r[0], abbr: r[1], repcol: r[3], ordernum: r[4], phonebonus: r[5], meshbonus: r[6] };
+    });
 }
 
 /* ------------------------------------------------------------------ *
@@ -67,9 +116,13 @@ function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || '';
   var cb = (e && e.parameter && e.parameter.callback) || '';
 
-  if (action === 'roster') {
-    var roster = readRoster();
-    return jsonp(cb, { ok: true, roster: roster });
+  if (action === 'roster' || action === 'bootstrap') {
+    return jsonp(cb, {
+      ok: true,
+      roster: readRoster(),
+      compPlans: readCompPlans(),
+      isps: readISPs()
+    });
   }
   return jsonp(cb, { ok: true, message: 'Unbreakable blitz intake receiver is live.' });
 }
@@ -85,7 +138,7 @@ function readRoster() {
     .map(function (r) {
       return {
         first: r[0] || '', last: r[1] || '', email: r[2] || '',
-        id: r[3] || '', comp: r[4] || '', region: r[5] || ''
+        id: r[3] || '', plan: r[4] || '', region: r[5] || ''
       };
     });
 }
@@ -106,6 +159,7 @@ function doPost(e) {
 
     var reps = (d.reps || []).map(function (r) {
       return r.name + (r.id ? ' [' + r.id + ']' : '') + ' $' + r.comp +
+        (r.plan ? ' (' + r.plan + ')' : '') +
         why(r.compChanged, ' (chg from $' + r.previousComp + ' eff ' + r.effectiveDate + ')');
     }).join('; ');
 
@@ -137,6 +191,7 @@ function doPost(e) {
     ]);
 
     appendNewReps(ss, d.reps || []);
+    appendNewISPs(ss, d.newISPs || []);
 
     return json({ ok: true });
   } catch (err) {
@@ -174,9 +229,24 @@ function appendNewReps(ss, reps) {
     var nameKey = (first + ' ' + last).toLowerCase().trim();
     if (emailKey && emails[emailKey]) return;
     if (!emailKey && names[nameKey]) return;
-    sheet.appendRow([first, last, r.email || '', r.id || '', r.comp || '', '']);
+    sheet.appendRow([first, last, r.email || '', r.id || '', r.plan || '', '']);
     if (emailKey) emails[emailKey] = true;
     names[nameKey] = true;
+  });
+}
+
+/* Append ISPs submitted via the "new ISP" block to the ISPs tab, deduped by name. */
+function appendNewISPs(ss, newISPs) {
+  if (!newISPs || !newISPs.length) return;
+  var sheet = ensureTab(ss, 'ISPs', ISP_HEADERS, DEFAULT_ISPS);
+  var existing = {};
+  readRows('ISPs').forEach(function (r) { existing[String(r[0]).toLowerCase().trim()] = true; });
+  newISPs.forEach(function (n) {
+    var name = String(n.name || '').trim();
+    if (!name || existing[name.toLowerCase()]) return;
+    sheet.appendRow([name, n.abbr || '', 'yes', n.repcol || '', n.ordernum || 'yes',
+      n.phonebonus || '', n.meshbonus || '']);
+    existing[name.toLowerCase()] = true;
   });
 }
 
