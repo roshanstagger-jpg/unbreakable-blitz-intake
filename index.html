@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Unbreakable · Blitz Intake</title>
+<style>
+  :root{
+    --bg:#0c0f16; --panel:#141924; --panel-2:#1b2130; --line:#28303f;
+    --ink:#eef2f8; --ink-2:#9aa7bd; --ink-3:#65718a;
+    --accent:#4f8cff; --accent-ink:#0c0f16; --accent-soft:#17233d;
+    --good:#33d29a; --good-soft:#123028; --warn:#ffb020; --danger:#ff6b6b;
+    --radius:10px; --maxw:760px;
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:24px 18px 96px;}
+  header.top{display:flex; align-items:center; gap:12px; padding:6px 0 18px;}
+  .logo{width:38px;height:38px;border-radius:9px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;color:var(--accent-ink);font-weight:800;font-size:20px;}
+  .logo svg{width:22px;height:22px;}
+  header.top h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+  header.top p{margin:2px 0 0;font-size:13px;color:var(--ink-2);}
+  .conn{margin-left:auto;font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3);}
+  .dot.ok{background:var(--good);} .dot.bad{background:var(--danger);}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;margin-top:16px;}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);margin:0 0 4px;font-weight:700;}
+  .card .hint{font-size:12.5px;color:var(--ink-3);margin:0 0 14px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  label.f{display:block;font-size:12px;color:var(--ink-2);margin-bottom:5px;}
+  input,select,textarea,button{font-family:inherit;font-size:14px;}
+  input,select,textarea{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:var(--radius);padding:9px 11px;outline:none;transition:border-color .12s,box-shadow .12s;
+  }
+  input::placeholder,textarea::placeholder{color:var(--ink-3);}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  input:invalid{border-color:var(--line);}
+  textarea{resize:vertical;min-height:60px;}
+  .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+  .row > div{flex:1;min-width:120px;}
+  button{cursor:pointer;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:var(--radius);padding:9px 14px;font-weight:600;transition:filter .12s,transform .05s;white-space:nowrap;}
+  button:hover{filter:brightness(1.15);} button:active{transform:scale(.985);}
+  button.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  button.ghost{background:transparent;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .chip{cursor:pointer;font-size:13px;padding:6px 13px;border-radius:20px;border:1px solid var(--line);
+    background:transparent;color:var(--ink-2);user-select:none;transition:.12s;}
+  .chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+  .list{display:flex;flex-direction:column;gap:7px;margin-top:6px;}
+  .item{display:flex;align-items:center;gap:11px;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);}
+  .item .nm{flex:1;font-size:14px;}
+  .item .id{font-size:11.5px;color:var(--ink-3);font-family:ui-monospace,Menlo,monospace;}
+  .item .money{font-size:13px;color:var(--ink-2);}
+  .tag{font-size:11px;padding:2px 8px;border-radius:11px;background:var(--good-soft);color:var(--good);font-weight:600;}
+  .x{cursor:pointer;color:var(--ink-3);font-size:18px;line-height:1;padding:0 2px;}
+  .x:hover{color:var(--danger);}
+  .sub{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px;}
+  .sub .lbl{font-size:12px;color:var(--ink-2);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .microhint{font-size:11px;color:var(--ink-3);margin-top:7px;}
+  .togglerow{display:flex;align-items:center;gap:9px;cursor:pointer;}
+  .togglerow input{width:auto;}
+  .summary{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:16px;}
+  .summary pre{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink);
+    white-space:pre-wrap;margin:8px 0 0;line-height:1.55;}
+  .count{font-size:12px;color:var(--ink-3);margin-left:8px;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);
+    background:var(--good);color:#062018;font-weight:700;font-size:14px;padding:12px 20px;border-radius:12px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:50;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.err{background:var(--danger);color:#2a0a0a;}
+  .connect-panel{background:var(--panel);border:1px solid var(--warn);border-radius:14px;padding:18px;margin-top:16px;}
+  .connect-panel h2{color:var(--warn);}
+  .flexrow{display:flex;gap:10px;flex-wrap:wrap;}
+  .flexrow input{flex:1;min-width:200px;}
+  a.link{color:var(--accent);text-decoration:none;} a.link:hover{text-decoration:underline;}
+  .hdr2{display:flex;align-items:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z"/></svg>
+    </div>
+    <div>
+      <h1>Blitz intake</h1>
+      <p>Unbreakable → Sequifi · submit a new blitz</p>
+    </div>
+    <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">Not connected</span></div>
+  </header>
+
+  <div id="connectPanel" class="connect-panel" style="display:none;">
+    <h2>Connect your sheet</h2>
+    <p class="hint">Paste the Apps Script Web App URL (ends in <code>/exec</code>). Saved to this browser so you only do it once.</p>
+    <div class="flexrow">
+      <input type="url" id="sheetUrl" placeholder="https://script.google.com/macros/s/…/exec" />
+      <button class="pri" id="saveUrl">Connect</button>
+    </div>
+  </div>
+
+  <!-- BLITZ DETAILS -->
+  <section class="card">
+    <h2>Blitz details</h2>
+    <div class="grid">
+      <div><label class="f">City</label><input id="city" placeholder="Geneva" /></div>
+      <div><label class="f">State</label><input id="state" placeholder="NY" maxlength="2" style="text-transform:uppercase" /></div>
+      <div><label class="f">Manager</label><input id="manager" placeholder="Calijah Hunter" /></div>
+      <div><label class="f">Start</label><input type="date" id="start" /></div>
+      <div><label class="f">End</label><input type="date" id="end" /></div>
+    </div>
+    <div style="margin-top:12px;">
+      <label class="f">ISP(s) for this blitz</label>
+      <div class="chips" id="ispChips"></div>
+    </div>
+    <div style="margin-top:12px;">
+      <label class="f">Notes (optional)</label>
+      <textarea id="notes" placeholder="Package rates, autopay bonus, anything unusual…"></textarea>
+    </div>
+  </section>
+
+  <!-- REPS -->
+  <section class="card">
+    <div class="hdr2"><h2 style="margin:0;">Reps</h2><span class="count" id="repCount"></span></div>
+    <p class="hint">Pick reps from the roster. Comp is per account, for this blitz.</p>
+    <div class="row">
+      <div style="flex:2;">
+        <label class="f">Add from roster</label>
+        <input list="rosterList" id="rosterPick" placeholder="Start typing a name…" />
+        <datalist id="rosterList"></datalist>
+      </div>
+      <div style="max-width:120px;">
+        <label class="f">Comp / acct</label>
+        <input type="number" id="rosterComp" value="250" min="0" step="5" />
+      </div>
+      <button id="addRoster">+ Add</button>
+    </div>
+    <div class="list" id="repRows"></div>
+
+    <div class="sub">
+      <div class="lbl">＋ Not in roster? Add a new rep</div>
+      <div class="row">
+        <div><label class="f">First name</label><input id="nrFirst" /></div>
+        <div><label class="f">Last name</label><input id="nrLast" /></div>
+        <div style="flex:2;"><label class="f">Email</label><input type="email" id="nrEmail" placeholder="name@email.com" /></div>
+        <div style="max-width:100px;"><label class="f">Comp</label><input type="number" id="nrComp" value="250" min="0" step="5" /></div>
+        <button id="addNew">Add new</button>
+      </div>
+      <div class="microhint">New reps are appended to the roster. UNB ID is left blank for Sequifi to assign.</div>
+    </div>
+  </section>
+
+  <!-- OVERRIDES -->
+  <section class="card">
+    <h2>Overrides · recruiting plan</h2>
+    <p class="hint">Who earns on top of the reps — e.g. “Cal $50 / account on the group.”</p>
+    <div class="list" id="ovrRows"></div>
+    <div class="row" style="margin-top:10px;">
+      <div><label class="f">Earner</label><input id="ovEarner" placeholder="Cal" /></div>
+      <div style="max-width:140px;"><label class="f">Type</label>
+        <select id="ovType"><option value="manager">Manager</option><option value="divisional">Divisional</option></select></div>
+      <div style="max-width:100px;"><label class="f">$/acct</label><input type="number" id="ovAmt" value="50" min="0" step="5" /></div>
+      <div style="max-width:150px;"><label class="f">Scope</label>
+        <select id="ovScope"><option value="everyone">Everyone going</option><option value="specific">Specific reps</option></select></div>
+      <button id="addOvr">+ Add</button>
+    </div>
+    <div id="ovrSpecificWrap" style="display:none;margin-top:10px;">
+      <label class="f">Which reps?</label>
+      <div class="chips" id="ovrRepChips"></div>
+    </div>
+  </section>
+
+  <!-- NEW ISP -->
+  <section class="card">
+    <label class="togglerow"><input type="checkbox" id="newIspToggle" /><span>This blitz uses a new ISP that isn’t set up yet</span></label>
+    <div id="newIspCfg" style="display:none;margin-top:14px;">
+      <div class="grid">
+        <div><label class="f">ISP name</label><input id="ni_name" placeholder="Fatbeam" /></div>
+        <div><label class="f">Abbreviation</label><input id="ni_abbr" placeholder="FB" /></div>
+        <div><label class="f">Rep-ID column on report</label><input id="ni_repcol" placeholder="Sales Rep #" /></div>
+        <div><label class="f">Has order #?</label>
+          <select id="ni_order"><option value="yes">Yes</option><option value="no">No — match on phone</option></select></div>
+        <div><label class="f">Phone bonus $</label><input type="number" id="ni_phone" value="0" min="0" /></div>
+        <div><label class="f">Mesh bonus $</label><input type="number" id="ni_mesh" value="0" min="0" /></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUBMITTER + SUMMARY -->
+  <section class="card">
+    <h2>Submitted by</h2>
+    <div class="grid">
+      <div><label class="f">Your name</label><input id="subName" placeholder="Brantley Topham" /></div>
+      <div><label class="f">Your email</label><input type="email" id="subEmail" placeholder="you@unbreakablesales.com" /></div>
+    </div>
+  </section>
+
+  <div class="summary">
+    <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);margin:0;font-weight:700;">Summary sent to sheet</h2>
+    <pre id="summary"></pre>
+    <button class="pri" id="submitBtn" style="margin-top:14px;">Submit blitz</button>
+    <button class="ghost" id="changeSheet" style="margin-top:14px;">Change sheet</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var LS_URL="ub_sheet_url", LS_SUB="ub_submitter";
+
+  var DEFAULT_ISPS=["Gonetspeed","Brightspeed","Joink / CTI","Fiber First","Lightcurve","Fatbeam"];
+  // Fallback roster (used if the sheet can't be reached). Real roster loads from the Roster tab.
+  var ROSTER=[
+    {first:"Calijah",last:"Hunter",id:"UNB1001",comp:325},{first:"Gavin",last:"Valentine",id:"UNB1002",comp:250},
+    {first:"Jacob",last:"Meek",id:"UNB1003",comp:250},{first:"Brendan",last:"Beasinger",id:"UNB1004",comp:250},
+    {first:"Brody",last:"Hall",id:"UNB1005",comp:250},{first:"Garrett",last:"Gurney",id:"UNB1007",comp:250},
+    {first:"Ricky",last:"Berlin",id:"UNB1008",comp:250},{first:"Gavin",last:"Bearse",id:"UNB1009",comp:250},
+    {first:"Ethan",last:"Cox",id:"UNB1011",comp:250},{first:"Mason",last:"Malin",id:"UNB1012",comp:250},
+    {first:"Benjamin",last:"Fox",id:"UNB1013",comp:250},{first:"Olivia",last:"Medlock",id:"UNB1014",comp:200},
+    {first:"Cole",last:"Eaton",id:"UNB1016",comp:250},{first:"Carson",last:"Bottema",id:"UNB4003",comp:325},
+    {first:"Tyler",last:"Skinner",id:"UNB4004",comp:325},{first:"Nora",last:"Leonard",id:"UNB5001",comp:250},
+    {first:"Pavlo",last:"Laba",id:"UNB3001",comp:250},{first:"Corey",last:"Mohr",id:"UNB3008",comp:300}
+  ];
+
+  var sheetUrl=localStorage.getItem(LS_URL)||new URLSearchParams(location.search).get("sheet")||"";
+  var selISPs=[], reps=[], ovrs=[];
+
+  /* ---------- connection ---------- */
+  function setConn(state){
+    var d=$("connDot"),t=$("connTxt");
+    d.className="dot"+(state==="ok"?" ok":state==="bad"?" bad":"");
+    t.textContent=state==="ok"?"Sheet connected":state==="bad"?"Roster offline — using cache":"Not connected";
+  }
+  function showConnect(show){ $("connectPanel").style.display=show?"block":"none"; }
+
+  function loadRoster(url){
+    return new Promise(function(resolve,reject){
+      var cb="ubcb_"+Math.floor(Date.now()/1000);
+      var timer=setTimeout(function(){ cleanup(); reject(new Error("timeout")); },8000);
+      function cleanup(){ clearTimeout(timer); try{delete window[cb];}catch(e){window[cb]=undefined;} if(s.parentNode)s.parentNode.removeChild(s); }
+      window[cb]=function(data){ cleanup(); resolve(data); };
+      var s=document.createElement("script");
+      s.src=url+(url.indexOf("?")>=0?"&":"?")+"action=roster&callback="+cb;
+      s.onerror=function(){ cleanup(); reject(new Error("neterr")); };
+      document.body.appendChild(s);
+    });
+  }
+
+  /* ---------- render ---------- */
+  function renderChips(){
+    $("ispChips").innerHTML=DEFAULT_ISPS.map(function(n){
+      var on=selISPs.indexOf(n)>=0;
+      return '<span class="chip'+(on?' on':'')+'" data-isp="'+esc(n)+'">'+(on?'✓ ':'')+esc(n)+'</span>';
+    }).join("");
+    each($("ispChips").children,function(el){
+      el.onclick=function(){var n=el.getAttribute("data-isp"),i=selISPs.indexOf(n);
+        if(i>=0)selISPs.splice(i,1);else selISPs.push(n); renderChips(); renderSummary();};
+    });
+  }
+  function renderRosterList(){
+    $("rosterList").innerHTML=ROSTER.map(function(r){return '<option value="'+esc(r.first+" "+r.last)+'">';}).join("");
+  }
+  function renderReps(){
+    $("repCount").textContent=reps.length?reps.length+" on this blitz":"";
+    $("repRows").innerHTML=reps.map(function(r,i){
+      var tag=r.isNew?'<span class="tag">new</span>':'<span class="id">'+esc(r.id||"—")+'</span>';
+      return '<div class="item"><span class="nm">'+esc(r.name)+'</span>'+tag+
+        '<span class="money">$'+r.comp+'</span><span class="x" data-rm="'+i+'">×</span></div>';
+    }).join("");
+    each($("repRows").querySelectorAll("[data-rm]"),function(el){
+      el.onclick=function(){reps.splice(+el.getAttribute("data-rm"),1);renderReps();renderOvrRepChips();renderSummary();};
+    });
+    renderOvrRepChips();
+  }
+  function renderOvrs(){
+    $("ovrRows").innerHTML=ovrs.map(function(o,i){
+      var sc=o.scope==="everyone"?"everyone going":(o.reps&&o.reps.length?o.reps.join(", "):"specific reps");
+      return '<div class="item"><span class="nm">'+esc(o.earner)+' · $'+o.amt+'/acct</span>'+
+        '<span class="money">'+o.type+' · '+esc(sc)+'</span><span class="x" data-rmo="'+i+'">×</span></div>';
+    }).join("");
+    each($("ovrRows").querySelectorAll("[data-rmo]"),function(el){
+      el.onclick=function(){ovrs.splice(+el.getAttribute("data-rmo"),1);renderOvrs();renderSummary();};
+    });
+  }
+  function renderOvrRepChips(){
+    var wrap=$("ovrSpecificWrap"),box=$("ovrRepChips");
+    if($("ovScope").value!=="specific"){wrap.style.display="none";return;}
+    wrap.style.display="block";
+    box.innerHTML=reps.map(function(r){return '<span class="chip" data-rc="'+esc(r.name)+'">'+esc(r.name)+'</span>';}).join("")
+      ||'<span class="microhint">Add reps above first.</span>';
+    each(box.querySelectorAll("[data-rc]"),function(el){el.onclick=function(){el.classList.toggle("on");};});
+  }
+  function renderSummary(){
+    var L=[];
+    var loc=(($("city").value||"")+" "+($("state").value||"")).trim();
+    var dr=($("start").value||"?")+" → "+($("end").value||"?");
+    L.push((selISPs.join(", ")||"(no ISP)")+" · "+(loc||"(no location)")+" · "+dr);
+    if($("manager").value)L.push("Manager: "+$("manager").value);
+    L.push("");
+    L.push(reps.length+" reps:");
+    reps.forEach(function(r){L.push("  • "+r.name+(r.isNew?" (new)":" ["+(r.id||"—")+"]")+" — $"+r.comp);});
+    if(ovrs.length){L.push("");L.push("Overrides:");
+      ovrs.forEach(function(o){var sc=o.scope==="everyone"?"everyone going":(o.reps||[]).join(", ")||"specific";
+        L.push("  • "+o.earner+" $"+o.amt+"/acct — "+sc);});}
+    if($("newIspToggle").checked&&$("ni_name").value)L.push("\nNew ISP: "+$("ni_name").value+" ("+$("ni_abbr").value+")");
+    $("summary").textContent=L.join("\n");
+  }
+
+  /* ---------- actions ---------- */
+  $("addRoster").onclick=function(){
+    var v=($("rosterPick").value||"").trim(); if(!v)return;
+    var m=ROSTER.filter(function(r){return (r.first+" "+r.last).toLowerCase()===v.toLowerCase();})[0];
+    reps.push({name:v,id:m?m.id:"",comp:+$("rosterComp").value||0,isNew:false});
+    $("rosterPick").value=""; renderReps(); renderSummary();
+  };
+  $("addNew").onclick=function(){
+    var f=($("nrFirst").value||"").trim(),l=($("nrLast").value||"").trim(),e=($("nrEmail").value||"").trim();
+    if(!f||!l){toast("First and last name required",true);return;}
+    reps.push({name:f+" "+l,email:e,id:"",comp:+$("nrComp").value||0,isNew:true});
+    if(!ROSTER.some(function(r){return r.email&&e&&r.email.toLowerCase()===e.toLowerCase();}))
+      ROSTER.push({first:f,last:l,email:e,id:"",comp:+$("nrComp").value||0});
+    renderRosterList();
+    $("nrFirst").value="";$("nrLast").value="";$("nrEmail").value="";
+    renderReps(); renderSummary();
+  };
+  $("addOvr").onclick=function(){
+    var e=($("ovEarner").value||"").trim(); if(!e){toast("Earner name required",true);return;}
+    var o={earner:e,type:$("ovType").value,amt:+$("ovAmt").value||0,scope:$("ovScope").value,reps:[]};
+    if(o.scope==="specific")
+      o.reps=Array.prototype.map.call($("ovrRepChips").querySelectorAll(".chip.on"),function(c){return c.getAttribute("data-rc");});
+    ovrs.push(o); $("ovEarner").value=""; renderOvrs(); renderSummary();
+  };
+  $("ovScope").onchange=renderOvrRepChips;
+  $("newIspToggle").onchange=function(){$("newIspCfg").style.display=this.checked?"block":"none";renderSummary();};
+  ["city","state","start","end","manager","ni_name","ni_abbr","notes"].forEach(function(id){
+    $(id).addEventListener("input",renderSummary);
+  });
+
+  function payload(){
+    return {
+      submitter:{name:$("subName").value.trim(),email:$("subEmail").value.trim()},
+      blitz:{city:$("city").value.trim(),state:$("state").value.trim().toUpperCase(),
+        start:$("start").value,end:$("end").value,manager:$("manager").value.trim(),notes:$("notes").value.trim()},
+      isps:selISPs.slice(),
+      reps:reps.map(function(r){return {name:r.name,id:r.id||"",comp:r.comp,email:r.email||"",isNew:!!r.isNew,
+        compChanged:false,previousComp:"",effectiveDate:""};}),
+      overrides:ovrs.map(function(o){return {earner:o.earner,type:o.type,amount:o.amt,scope:o.scope,reps:o.reps||[]};}),
+      newISPs:$("newIspToggle").checked?[{name:$("ni_name").value.trim(),abbr:$("ni_abbr").value.trim(),
+        repcol:$("ni_repcol").value.trim(),ordernum:$("ni_order").value,
+        phonebonus:+$("ni_phone").value||0,meshbonus:+$("ni_mesh").value||0}]:[],
+      summary:$("summary").textContent
+    };
+  }
+
+  $("submitBtn").onclick=function(){
+    if(!sheetUrl){showConnect(true);toast("Connect your sheet first",true);return;}
+    if(!selISPs.length){toast("Pick at least one ISP",true);return;}
+    if(!reps.length){toast("Add at least one rep",true);return;}
+    if(!$("city").value.trim()){toast("City is required",true);return;}
+    var btn=this; btn.disabled=true; var old=btn.textContent; btn.textContent="Submitting…";
+    var body=JSON.stringify(payload());
+    // No custom headers → "simple" request → no CORS preflight (Apps Script has no CORS headers).
+    fetch(sheetUrl,{method:"POST",body:body}).then(function(){
+      localStorage.setItem(LS_SUB,JSON.stringify(payload().submitter));
+      toast("Submitted — row added to the sheet");
+      reps=[];ovrs=[];selISPs=[];
+      ["city","state","manager","notes","ni_name","ni_abbr","ni_repcol"].forEach(function(id){$(id).value="";});
+      $("newIspToggle").checked=false;$("newIspCfg").style.display="none";
+      renderChips();renderReps();renderOvrs();renderSummary();
+    }).catch(function(){ toast("Network error — not submitted",true);
+    }).then(function(){ btn.disabled=false; btn.textContent=old; });
+  };
+
+  $("saveUrl").onclick=function(){
+    var u=($("sheetUrl").value||"").trim();
+    if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u)){toast("That doesn’t look like an /exec URL",true);return;}
+    sheetUrl=u; localStorage.setItem(LS_URL,u); showConnect(false); init();
+  };
+  $("changeSheet").onclick=function(){ $("sheetUrl").value=sheetUrl; showConnect(true); window.scrollTo({top:0,behavior:"smooth"}); };
+
+  /* ---------- helpers ---------- */
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function each(nl,fn){Array.prototype.forEach.call(nl,fn);}
+  var tt;
+  function toast(msg,isErr){var t=$("toast");t.textContent=msg;t.className="toast show"+(isErr?" err":"");
+    clearTimeout(tt);tt=setTimeout(function(){t.className="toast"+(isErr?" err":"");},3200);}
+
+  /* ---------- boot ---------- */
+  function init(){
+    try{var s=JSON.parse(localStorage.getItem(LS_SUB)||"{}");if(s.name)$("subName").value=s.name;if(s.email)$("subEmail").value=s.email;}catch(e){}
+    if(!sheetUrl){setConn("none");showConnect(true);}
+    else{
+      showConnect(false);
+      loadRoster(sheetUrl).then(function(data){
+        if(data&&data.ok&&data.roster&&data.roster.length){
+          ROSTER=data.roster.map(function(r){return {first:r.first||r.First||"",last:r.last||r.Last||"",
+            email:r.email||r.Email||"",id:r.id||r.ID||"",comp:+(r.comp||r.Comp||0)};});
+          renderRosterList();
+        }
+        setConn("ok");
+      }).catch(function(){ setConn("bad"); });
+    }
+    renderChips();renderRosterList();renderReps();renderOvrs();renderSummary();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
