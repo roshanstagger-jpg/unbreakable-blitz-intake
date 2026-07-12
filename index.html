@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Unbreakable · Blitz Intake</title>
+<title>Sequifi · Blitz Intake</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M31 9 L16 9 A6.5 6.5 0 0 0 11.5 20 L24 24 A6.5 6.5 0 0 1 24 31 L9 31' fill='none' stroke='%236366f1' stroke-width='4.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <style>
   :root{
-    --bg:#0c0f16; --panel:#141924; --panel-2:#1b2130; --line:#28303f;
-    --ink:#eef2f8; --ink-2:#9aa7bd; --ink-3:#65718a;
-    --accent:#4f8cff; --accent-ink:#0c0f16; --accent-soft:#17233d;
-    --good:#33d29a; --good-soft:#123028; --warn:#ffb020; --danger:#ff6b6b;
+    --bg:#f5f6fa; --panel:#ffffff; --panel-2:#f7f8fb; --line:#e6e8ee;
+    --ink:#101322; --ink-2:#5b6478; --ink-3:#9aa1b2;
+    --accent:#6366f1; --accent-ink:#ffffff; --accent-soft:#eef0fe;
+    --good:#12b76a; --good-soft:#e7f7ef; --warn:#c77d11; --danger:#e5484d;
     --radius:10px; --maxw:760px;
     font-synthesis:none;
   }
@@ -21,12 +22,13 @@
     line-height:1.5; -webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:var(--maxw); margin:0 auto; padding:24px 18px 96px;}
-  header.top{display:flex; align-items:center; gap:12px; padding:6px 0 18px;}
-  .logo{width:38px;height:38px;border-radius:9px;background:var(--accent);
-    display:flex;align-items:center;justify-content:center;color:var(--accent-ink);font-weight:800;font-size:20px;}
-  .logo svg{width:22px;height:22px;}
-  header.top h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-0.01em;}
-  header.top p{margin:2px 0 0;font-size:13px;color:var(--ink-2);}
+  header.top{display:flex; align-items:center; gap:14px; padding:8px 0 20px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:center; gap:9px;}
+  .mark{width:30px; height:30px; flex:none;}
+  .word{font-size:22px; font-weight:700; letter-spacing:-0.02em; color:var(--ink);}
+  .divider{width:1px; height:26px; background:var(--line);}
+  .titles h1{font-size:16px; margin:0; font-weight:700; letter-spacing:-0.01em;}
+  .titles p{margin:1px 0 0; font-size:12.5px; color:var(--ink-2);}
   .conn{margin-left:auto;font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px;white-space:nowrap;}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3);}
   .dot.ok{background:var(--good);} .dot.bad{background:var(--danger);}
@@ -90,12 +92,18 @@
 <div class="wrap">
 
   <header class="top">
-    <div class="logo" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z"/></svg>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M31 9 L16 9 A6.5 6.5 0 0 0 11.5 20 L24 24 A6.5 6.5 0 0 1 24 31 L9 31"
+              fill="none" stroke="var(--accent)" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 9 L14 9" fill="none" stroke="var(--accent)" stroke-width="4.6" stroke-linecap="round"/>
+      </svg>
+      <span class="word">Sequifi</span>
     </div>
-    <div>
+    <span class="divider"></span>
+    <div class="titles">
       <h1>Blitz intake</h1>
-      <p>Unbreakable → Sequifi · submit a new blitz</p>
+      <p>Unbreakable · submit a new blitz</p>
     </div>
     <div class="conn"><span class="dot" id="connDot"></span><span id="connTxt">Not connected</span></div>
   </header>
