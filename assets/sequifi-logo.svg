@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 214 56" role="img" aria-label="Sequifi">
+  <title>Sequifi</title>
+  <path d="M42 12 H22 a9 9 0 0 0 0 18 h8 a9 9 0 0 1 0 18 H12"
+        fill="none" stroke="#6C6FE8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="64" y="41" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" fill="#0B0B0F" letter-spacing="-1">Sequifi</text>
+</svg>
