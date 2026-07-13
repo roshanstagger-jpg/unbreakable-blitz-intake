@@ -212,6 +212,8 @@
     <pre id="summary"></pre>
     <button class="pri" id="submitBtn" style="margin-top:14px;">Submit blitz</button>
     <button class="ghost" id="changeSheet" style="margin-top:14px;">Change sheet</button>
+    <button class="ghost" id="uploadLogoBtn" style="margin-top:14px;">Upload logo</button>
+    <input type="file" id="logoFile" accept="image/svg+xml,image/png,image/jpeg" style="display:none;" />
   </div>
 
 </div>
@@ -222,7 +224,7 @@
 (function(){
   "use strict";
   var $=function(id){return document.getElementById(id);};
-  var LS_URL="ub_sheet_url", LS_SUB="ub_submitter";
+  var LS_URL="ub_sheet_url", LS_SUB="ub_submitter", LS_LOGO="ub_logo";
 
   // Fallbacks used only if the sheet can't be reached. Live lists load from the sheet.
   var DEFAULT_ISPS=["Gonetspeed","Brightspeed","Joink / CTI","Fiber First","Lightcurve","Fatbeam"];
@@ -422,6 +424,24 @@
   };
   $("changeSheet").onclick=function(){ $("sheetUrl").value=sheetUrl; showConnect(true); window.scrollTo({top:0,behavior:"smooth"}); };
 
+  function applyLogo(url){ var img=document.querySelector(".logo-img"); if(img&&url) img.src=url; }
+  $("uploadLogoBtn").onclick=function(){ $("logoFile").click(); };
+  $("logoFile").onchange=function(){
+    var f=this.files&&this.files[0]; this.value=""; if(!f) return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      var url=String(rd.result||"");
+      if(url.length>45000){ toast("Logo too big — use an SVG or a smaller image",true); return; }
+      applyLogo(url); localStorage.setItem(LS_LOGO,url);
+      if(sheetUrl){
+        fetch(sheetUrl,{method:"POST",body:JSON.stringify({action:"setConfig",config:{logo:url}})})
+          .then(function(){ toast("Logo saved — everyone sees it now"); })
+          .catch(function(){ toast("Saved on this device only (network error)",true); });
+      } else { toast("Saved on this device — connect a sheet to share it"); }
+    };
+    rd.readAsDataURL(f);
+  };
+
   /* ---------- helpers ---------- */
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
   function each(nl,fn){Array.prototype.forEach.call(nl,fn);}
@@ -432,6 +452,7 @@
   /* ---------- boot ---------- */
   function init(){
     try{var s=JSON.parse(localStorage.getItem(LS_SUB)||"{}");if(s.name)$("subName").value=s.name;if(s.email)$("subEmail").value=s.email;}catch(e){}
+    var cachedLogo=localStorage.getItem(LS_LOGO); if(cachedLogo) applyLogo(cachedLogo);
     if(!sheetUrl){setConn("none");showConnect(true);}
     else{
       showConnect(false);
@@ -444,6 +465,7 @@
             COMPPLANS=data.compPlans.map(function(p){return {name:p.name,rate:p.rate};});
           if(data.isps&&data.isps.length)
             ISPS=data.isps.map(function(i){return i.name;});
+          if(data.config&&data.config.logo){ applyLogo(data.config.logo); localStorage.setItem(LS_LOGO,data.config.logo); }
           renderRosterList();populateCompSelects();renderChips();
         }
         setConn("ok");

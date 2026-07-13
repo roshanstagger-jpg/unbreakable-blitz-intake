@@ -29,6 +29,7 @@ var SUBMISSION_HEADERS = [
   'Manager', 'ISP(s)', '# Reps', 'Reps (name / ID / comp / change)',
   'Manager overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
 ];
+var CONFIG_HEADERS = ['Key', 'Value'];
 
 // Defaults seeded when a tab is created from a blank sheet (the .xlsx template
 // already ships these). Editing the tabs in the sheet overrides them.
@@ -70,6 +71,7 @@ function setupSheet() {
   ensureTab(ss, 'Roster', ROSTER_HEADERS);
   ensureTab(ss, 'CompPlans', COMPPLAN_HEADERS, DEFAULT_COMPPLANS);
   ensureTab(ss, 'ISPs', ISP_HEADERS, DEFAULT_ISPS);
+  ensureTab(ss, 'Config', CONFIG_HEADERS);
   SpreadsheetApp.getActive().toast('Tabs are ready. Deploy → Web app, then connect the form.', 'Unbreakable Intake', 5);
 }
 
@@ -107,6 +109,24 @@ function readISPs() {
     });
 }
 
+// Config is a simple Key/Value tab (e.g. logo -> data URL).
+function readConfig() {
+  var out = {};
+  readRows('Config').forEach(function (r) { if (String(r[0]).trim() !== '') out[String(r[0])] = r[1]; });
+  return out;
+}
+
+function setConfig(ss, obj) {
+  var sheet = ensureTab(ss, 'Config', CONFIG_HEADERS);
+  var rows = sheet.getDataRange().getValues();
+  Object.keys(obj || {}).forEach(function (key) {
+    var found = -1;
+    for (var i = 1; i < rows.length; i++) { if (String(rows[i][0]) === key) { found = i; break; } }
+    if (found >= 0) sheet.getRange(found + 1, 2).setValue(obj[key]);
+    else { sheet.appendRow([key, obj[key]]); rows.push([key, obj[key]]); }
+  });
+}
+
 /* ------------------------------------------------------------------ *
  * doGet — serves the Roster tab as JSONP so the static site can load  *
  * it cross-origin (Apps Script sends no CORS headers, so we use a     *
@@ -121,7 +141,8 @@ function doGet(e) {
       ok: true,
       roster: readRoster(),
       compPlans: readCompPlans(),
-      isps: readISPs()
+      isps: readISPs(),
+      config: readConfig()
     });
   }
   return jsonp(cb, { ok: true, message: 'Unbreakable blitz intake receiver is live.' });
@@ -152,9 +173,15 @@ function doPost(e) {
   lock.waitLock(30000); // avoid collisions if two people submit at once
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
-
     var d = JSON.parse(e.postData.contents);
+
+    // Config writes (e.g. logo upload) short-circuit here — not a blitz row.
+    if (d.action === 'setConfig') {
+      setConfig(ss, d.config || {});
+      return json({ ok: true });
+    }
+
+    var sheet = ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
     var b = d.blitz || {};
 
     var reps = (d.reps || []).map(function (r) {
