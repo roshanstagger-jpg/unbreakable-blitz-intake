@@ -133,7 +133,7 @@
   <section class="card" id="newBlitzCard">
     <h2>Blitz details</h2>
     <div class="grid">
-      <div><label class="f">Office</label><select id="office"></select></div>
+      <div><label class="f">Blitz name</label><input id="blitzName" list="blitzNameList" placeholder="Stratford CT · GNS · Gavin" /><datalist id="blitzNameList"></datalist></div>
       <div><label class="f">City</label><input id="city" placeholder="Geneva" /></div>
       <div><label class="f">State</label><input id="state" placeholder="NY" maxlength="2" style="text-transform:uppercase" /></div>
       <div><label class="f">Manager</label><input id="manager" placeholder="Calijah Hunter" /></div>
@@ -273,9 +273,9 @@
   var selISPs=[], reps=[], ovrs=[], mode="new";
 
   function composeBlitzName(){
-    var loc=(($("city").value||"")+" "+($("state").value||"")).trim();
-    var off=$("office").value||"";
-    return off? (off+" · "+loc) : loc;
+    var name=($("blitzName").value||"").trim();
+    if(name) return name;
+    return (($("city").value||"")+" "+($("state").value||"")).trim();
   }
   function splitCsv(s){ return String(s||"").split(",").map(function(x){return x.trim();}).filter(Boolean); }
   function currentBlitz(){
@@ -283,7 +283,7 @@
       var b=BLITZES[+($("existingBlitz").value)]; if(!b) return null;
       return {name:b.name,office:b.office,city:b.city,state:b.state,start:b.start,end:b.end,manager:b.manager,notes:"",isps:splitCsv(b.isps)};
     }
-    return {name:composeBlitzName(),office:$("office").value||"",city:$("city").value.trim(),state:$("state").value.trim().toUpperCase(),
+    return {name:composeBlitzName(),office:"",city:$("city").value.trim(),state:$("state").value.trim().toUpperCase(),
       start:$("start").value,end:$("end").value,manager:$("manager").value.trim(),notes:$("notes").value.trim(),isps:selISPs.slice()};
   }
 
@@ -318,22 +318,14 @@
   }
 
   /* ---------- render ---------- */
-  function populateOffices(){
-    var cur=$("office").value;
-    $("office").innerHTML='<option value="">— office —</option>'+OFFICES.map(function(o){return '<option value="'+esc(o)+'">'+esc(o)+'</option>';}).join("");
-    if(cur)$("office").value=cur;
+  function populateBlitzNames(){
+    $("blitzNameList").innerHTML=BLITZES.map(function(b){return '<option value="'+esc(b.name)+'">';}).join("");
   }
   function populateBlitzes(){
     var sel=$("existingBlitz");
     if(!BLITZES.length){ sel.innerHTML='<option value="">No blitzes yet — submit one first</option>'; return; }
-    var byOffice={};
-    BLITZES.forEach(function(b,i){ var k=b.office||"Other"; (byOffice[k]=byOffice[k]||[]).push({b:b,i:i}); });
-    var html='<option value="">— pick a blitz —</option>';
-    Object.keys(byOffice).forEach(function(off){
-      html+='<optgroup label="'+esc(off)+'">'+byOffice[off].map(function(x){
-        return '<option value="'+x.i+'">'+esc(x.b.name)+(x.b.start?" ("+esc(x.b.start)+")":"")+'</option>';}).join("")+'</optgroup>';
-    });
-    sel.innerHTML=html;
+    sel.innerHTML='<option value="">— pick a blitz —</option>'+BLITZES.map(function(b,i){
+      return '<option value="'+i+'">'+esc(b.name)+(b.start?" ("+esc(b.start)+")":"")+'</option>';}).join("");
   }
   function showBlitzInfo(){
     var b=BLITZES[+($("existingBlitz").value)], box=$("existingBlitzInfo");
@@ -454,7 +446,7 @@
   ["city","state","start","end","manager","ni_name","ni_abbr","notes"].forEach(function(id){
     $(id).addEventListener("input",renderSummary);
   });
-  $("office").addEventListener("change",renderSummary);
+  $("blitzName").addEventListener("input",renderSummary);
   each($("modebar").children,function(el){ el.onclick=function(){ setMode(el.getAttribute("data-mode")); }; });
   $("existingBlitz").onchange=function(){ showBlitzInfo(); renderSummary(); };
 
@@ -549,13 +541,13 @@
           if(data.offices) OFFICES=data.offices;
           if(data.blitzes) BLITZES=data.blitzes;
           if(data.config&&data.config.logo){ applyLogo(data.config.logo); localStorage.setItem(LS_LOGO,data.config.logo); }
-          renderRosterList();populateCompSelects();populateOffices();populateBlitzes();renderChips();
+          renderRosterList();populateCompSelects();populateBlitzNames();populateBlitzes();renderChips();
           if(mode==="addReps")showBlitzInfo(); renderSummary();
         }
         setConn("ok");
       }).catch(function(){ setConn("bad"); });
     }
-    renderChips();renderRosterList();populateCompSelects();populateOffices();populateBlitzes();renderReps();renderOvrs();setMode("new");
+    renderChips();renderRosterList();populateCompSelects();populateBlitzNames();populateBlitzes();renderReps();renderOvrs();setMode("new");
   }
   init();
 })();
