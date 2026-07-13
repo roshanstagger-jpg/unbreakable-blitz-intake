@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sequifi Blitz Intake — Admin Guide</title>
+<style>
+  :root{
+    --accent:#4b4ee0; --accent-soft:#ecedfd; --accent-ink:#33359c;
+    --ink:#191c28; --ink-2:#4a5265; --ink-3:#828a9c; --line:#dfe2ec;
+    --surface:#ffffff; --surface-2:#f4f5fa;
+    --good-soft:#e4f6ee; --good-ink:#0a6647;
+    --warn-soft:#fbf0da; --warn-line:#e6c689;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  @page{ size:letter; margin:14mm 15mm; }
+  html,body{ margin:0; padding:0; background:#fff; }
+  body{ color:var(--ink); font-family:var(--font-sans); line-height:1.55; font-size:13px;
+    -webkit-font-smoothing:antialiased; }
+  h1,h2,h3{ color:var(--ink); margin:0; font-weight:650; text-wrap:balance; }
+  h1{ font-size:27px; letter-spacing:-.02em; line-height:1.12; }
+  h2{ font-size:17px; letter-spacing:-.01em; }
+  h3{ font-size:13.5px; }
+  p{ margin:0; color:var(--ink-2); }
+  code{ font-family:var(--font-mono); font-size:.85em; background:var(--surface-2);
+    border:1px solid var(--line); border-radius:4px; padding:1px 5px; color:var(--ink); white-space:nowrap; }
+  .eyebrow{ font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+  header.hero{ padding-bottom:16px; border-bottom:2px solid var(--accent); margin-bottom:6px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+  .hero .mark{ width:44px; height:44px; flex:none; }
+  header.hero p.lede{ font-size:14.5px; margin-top:9px; max-width:64ch; }
+  .metabar{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .metabar span{ font-size:11.5px; padding:5px 10px; border-radius:7px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--ink-2); }
+  .metabar span.link{ color:var(--accent-ink); border-color:var(--accent-soft); background:var(--accent-soft); }
+  section{ padding:16px 0 4px; break-inside:avoid; }
+  .sechead{ display:flex; align-items:baseline; gap:10px; margin-bottom:11px; }
+  .secnum{ font-family:var(--font-mono); font-size:12px; color:var(--accent); font-weight:600; }
+  .steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .step,.card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:13px; break-inside:avoid; }
+  .step .n{ width:23px; height:23px; border-radius:6px; background:var(--accent-soft); color:var(--accent-ink);
+    font-weight:650; font-size:12px; display:flex; align-items:center; justify-content:center; margin-bottom:9px; }
+  .step h3{ margin-bottom:4px; } .step p{ font-size:12px; }
+  table.tbl{ width:100%; border-collapse:collapse; font-size:12px; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .tbl th,.tbl td{ text-align:left; padding:8px 11px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .tbl th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-3); font-weight:600; background:var(--surface-2); }
+  .tbl tr{ break-inside:avoid; } .tbl tr:last-child td{ border-bottom:none; }
+  .tbl td:first-child{ white-space:nowrap; }
+  .chip{ display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; }
+  .chip.ref{ background:var(--accent-soft); color:var(--accent-ink); }
+  .chip.auto{ background:var(--good-soft); color:var(--good-ink); }
+  .chip.cfg{ background:var(--surface-2); color:var(--ink-3); border:1px solid var(--line); }
+  ul.clean{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
+  ul.clean li{ padding-left:22px; position:relative; color:var(--ink-2); font-size:12.5px; break-inside:avoid; }
+  ul.clean li::before{ content:""; position:absolute; left:5px; top:7px; width:6px; height:6px; border-radius:2px; background:var(--accent); }
+  .cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .card h3{ margin-bottom:5px; } .card p{ font-size:12px; }
+  .card .tag{ font-size:9.5px; font-weight:600; color:var(--ink-3); text-transform:uppercase; letter-spacing:.05em; }
+  .note{ background:var(--warn-soft); border:1px solid var(--warn-line); border-radius:9px; padding:10px 13px;
+    font-size:12.5px; color:var(--ink); margin-top:12px; break-inside:avoid; }
+  ol.checklist{ counter-reset:ck; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  ol.checklist li{ list-style:none; display:flex; gap:11px; align-items:flex-start; font-size:12.5px; color:var(--ink-2); break-inside:avoid; }
+  ol.checklist li::before{ counter-increment:ck; content:counter(ck); flex:none; width:21px; height:21px; border-radius:50%;
+    border:1.5px solid var(--accent); color:var(--accent); font-size:11px; font-weight:650;
+    display:flex; align-items:center; justify-content:center; }
+  .foot{ margin-top:20px; padding-top:12px; border-top:1px solid var(--line); font-size:11px; color:var(--ink-3); text-align:center; }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Sequifi × Unbreakable</div>
+      <h1>Blitz Intake — Admin Guide</h1>
+      <p class="lede">How to manage the intake sheet and review the blitzes the Unbreakable team submits through the form. For internal admin and CS staff — no coding required.</p>
+      <div class="metabar">
+        <span class="link">Form · unbreakable-blitz-intake.vercel.app</span>
+        <span>Backend · the intake Google Sheet</span>
+        <span>For · admin / CS staff</span>
+      </div>
+    </div>
+    <svg class="mark" viewBox="0 0 44 44" aria-hidden="true"><path d="M31 13 H19 a6 6 0 0 0 0 12 h6 a6 6 0 0 1 0 12 H13" fill="none" stroke="#4b4ee0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </header>
+
+  <section>
+    <div class="sechead"><span class="secnum">01</span><h2>How it works</h2></div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Unbreakable submits</h3><p>A manager opens the form and either creates a <b>new blitz</b> (typing a blitz name) or picks <b>add reps to an existing</b> one, adds the reps and comp, and submits.</p></div>
+      <div class="step"><div class="n">2</div><h3>It lands in the sheet</h3><p>Each submission becomes one row in <code>Submissions</code> and one row per rep in <code>Rep detail</code>. New reps and blitzes add themselves to the reference tabs.</p></div>
+      <div class="step"><div class="n">3</div><h3>You manage &amp; review</h3><p>Keep the reference lists current, and use <code>Submissions</code> and <code>Rep detail</code> to onboard reps and hand clean data to payroll.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="secnum">02</span><h2>The tabs</h2></div>
+    <p style="margin-bottom:11px; font-size:12.5px;"><span class="chip ref">Reference</span> tabs are what the form reads — edit them to change what the form offers. <span class="chip auto">Auto-filled</span> tabs are your record of what came in. <span class="chip cfg">Config</span> is behind-the-scenes.</p>
+    <table class="tbl">
+      <thead><tr><th>Tab</th><th>Kind</th><th>What it's for</th></tr></thead>
+      <tbody>
+        <tr><td><code>Roster</code></td><td><span class="chip ref">Reference</span></td><td>Master rep list. The form's rep picker and default comp read from here. New reps append here with a blank UNB ID for you to assign.</td></tr>
+        <tr><td><code>CompPlans</code></td><td><span class="chip ref">Reference</span></td><td>Sequifi's named rate plans (Rate 200, Rate 250…). The form's comp dropdown reads this. Add a row to add a plan.</td></tr>
+        <tr><td><code>ISPs</code></td><td><span class="chip ref">Reference</span></td><td>The ISP chips on the form. Add a row (name + abbreviation) to make a new ISP selectable.</td></tr>
+        <tr><td><code>Blitzes</code></td><td><span class="chip ref">Reference</span></td><td>The list behind "add reps to an existing blitz." New blitzes submitted on the form append here automatically.</td></tr>
+        <tr><td><code>Submissions</code></td><td><span class="chip auto">Auto-filled</span></td><td>One row per submission, each with a Submission ID. Your master log of everything that came in.</td></tr>
+        <tr><td><code>Rep detail</code></td><td><span class="chip auto">Auto-filled</span></td><td>One row per rep per blitz — built for payroll. Comp plan, comp $, and the overrides that apply to each rep.</td></tr>
+        <tr><td><code>Config</code></td><td><span class="chip cfg">Config</span></td><td>Stores the uploaded logo. Leave it alone.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="secnum">03</span><h2>Managing the lists</h2></div>
+    <ul class="clean">
+      <li><b>Editing a reference tab changes the form.</b> Add a rep, a comp plan, or an ISP by adding a row — no developer needed.</li>
+      <li><b>Changes appear when the form is reloaded</b>, not live in a tab that's already open. Tell submitters to refresh if they don't see a new option.</li>
+      <li><b>Use the <code>Active</code> column to hide, not delete.</b> On <code>CompPlans</code>, <code>ISPs</code>, and <code>Blitzes</code>, set <code>Active</code> to <code>no</code> to retire an item without losing its history.</li>
+      <li><b>Dedupe happens on email.</b> When a rep is added twice, the sheet keeps one Roster entry — keep emails accurate.</li>
+      <li><b>Don't rename header rows</b> or delete the <code>Submissions</code> / <code>Rep detail</code> tabs — the form writes to those exact columns.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="secnum">04</span><h2>Reviewing submissions</h2></div>
+    <ul class="clean">
+      <li><b>Start in <code>Submissions</code>.</b> Each row is one submission. The Submission ID looks like <code>UNB-20260712-001</code> (date + that day's sequence). The <b>Full summary</b> column is a plain-English recap.</li>
+      <li><b>A blitz marked <code>(+reps added)</code></b> means reps added to an existing blitz, not a brand-new one.</li>
+      <li><b>Use <code>Rep detail</code> for payroll.</b> One row per rep: comp plan, comp $, new-rep flag, and the manager/divisional overrides resolved onto their row. Filter by <b>Blitz</b> or <b>Submission ID</b>.</li>
+      <li><b>New reps to onboard</b> show <code>New rep? = yes</code> with a blank UNB ID — that's your onboarding queue.</li>
+      <li><b>Export anytime:</b> <code>File → Download → Microsoft Excel (.xlsx)</code>.</li>
+    </ul>
+    <div class="note"><b>Tip:</b> create a Filter view (not a plain filter) on <code>Rep detail</code> so you can slice by blitz or office without disturbing what teammates see.</div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="secnum">05</span><h2>Common tasks</h2></div>
+    <div class="cards">
+      <div class="card"><span class="tag">Onboarding</span><h3>Onboard a new rep</h3><p>Find <code>New rep? = yes</code> in <code>Rep detail</code> (or a blank UNB ID in <code>Roster</code>). Create them in Sequifi, then paste their UNB ID back into the Roster row.</p></div>
+      <div class="card"><span class="tag">Reference</span><h3>Add a comp plan or ISP</h3><p>Add a row to <code>CompPlans</code> (plan name + rate) or <code>ISPs</code> (name + abbreviation). It appears in the form on next reload.</p></div>
+      <div class="card"><span class="tag">Reference</span><h3>Retire an old blitz</h3><p>In <code>Blitzes</code>, set that row's <code>Active</code> to <code>no</code>. It stops showing in the "add reps" picker but stays on record.</p></div>
+      <div class="card"><span class="tag">Branding</span><h3>Change the logo</h3><p>Open the form → <b>Upload logo</b> → pick the image. It saves to the sheet and shows for everyone. Use an SVG or a small PNG.</p></div>
+      <div class="card"><span class="tag">Setup</span><h3>Connect a new browser</h3><p>If the form shows <b>Roster offline</b>, click <b>Connect</b> / <b>Change sheet</b> and paste the Web App URL ending in <code>/exec</code>.</p></div>
+      <div class="card"><span class="tag">Reference</span><h3>Fix a rep's comp</h3><p>Edit their <b>Default plan</b> in <code>Roster</code>. That sets the form's pre-fill only — actual comp is chosen per blitz at submit time.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="secnum">06</span><h2>Troubleshooting</h2></div>
+    <ul class="clean">
+      <li><b>“Roster offline — using cache.”</b> The form couldn't reach the sheet. Re-paste the <code>/exec</code> URL via <b>Connect</b>; if it persists, the Apps Script Web App needs access set to <b>Anyone</b> and a fresh deployment.</li>
+      <li><b>A new rep / plan / ISP isn't showing.</b> Reload the form — reference tabs load on open, not live.</li>
+      <li><b>Two people editing at once.</b> Fine. Submissions are written under a lock, so simultaneous submits won't collide.</li>
+      <li><b>A submission didn't appear.</b> Check the submitter had the form connected (green dot) and hit Submit — an offline form can't write.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="secnum">07</span><h2>Train a new admin (15 minutes)</h2></div>
+    <ol class="checklist">
+      <li>Open the intake sheet together and walk through the tabs using section 02.</li>
+      <li>Open the form, connect it, and submit one <b>test blitz</b> with two reps (make one a brand-new rep).</li>
+      <li>Find that submission in <code>Submissions</code> — point out the Submission ID and Full summary.</li>
+      <li>Open <code>Rep detail</code> and show the two rep rows, the comp columns, and the <code>New rep? = yes</code> flag.</li>
+      <li>Confirm the new rep landed in <code>Roster</code> with a blank UNB ID; assign one.</li>
+      <li>Edit a reference row (e.g. add a comp plan), reload the form, and watch it appear.</li>
+      <li>Export <code>Rep detail</code> to Excel to show the payroll hand-off.</li>
+    </ol>
+  </section>
+
+  <p class="foot">Sequifi Blitz Intake · Admin Guide · questions or changes to the form → Roshan</p>
+
+</body>
+</html>
