@@ -25,9 +25,13 @@ var ROSTER_HEADERS = ['First', 'Last', 'Email', 'UNB ID', 'Default plan', 'Offic
 var COMPPLAN_HEADERS = ['Plan name', 'Rate ($/acct)', 'Holdback %', 'Active'];
 var ISP_HEADERS = ['ISP name', 'Abbr', 'Active', 'Rep-ID column on report', 'Has order #?', 'Phone bonus $', 'Mesh bonus $'];
 var SUBMISSION_HEADERS = [
-  'Received', 'Submitted by', 'Email', 'Blitz', 'Start', 'End',
+  'Submission ID', 'Received', 'Submitted by', 'Email', 'Blitz', 'Start', 'End',
   'Manager', 'ISP(s)', '# Reps', 'Reps (name / ID / comp / change)',
   'Manager overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
+];
+var REPDETAIL_HEADERS = [
+  'Submission ID', 'Received', 'Blitz', 'Start', 'End', 'Manager', 'ISP(s)',
+  'Rep', 'UNB ID', 'Comp plan', 'Comp $', 'New rep?', 'Overrides on rep'
 ];
 var CONFIG_HEADERS = ['Key', 'Value'];
 
@@ -69,6 +73,7 @@ function setupSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
   ensureTab(ss, 'Roster', ROSTER_HEADERS);
+  ensureTab(ss, 'Rep detail', REPDETAIL_HEADERS);
   ensureTab(ss, 'CompPlans', COMPPLAN_HEADERS, DEFAULT_COMPPLANS);
   ensureTab(ss, 'ISPs', ISP_HEADERS, DEFAULT_ISPS);
   ensureTab(ss, 'Config', CONFIG_HEADERS);
@@ -183,6 +188,8 @@ function doPost(e) {
 
     var sheet = ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
     var b = d.blitz || {};
+    var received = new Date();
+    var submissionId = makeSubmissionId(sheet, received);
 
     var reps = (d.reps || []).map(function (r) {
       return r.name + (r.id ? ' [' + r.id + ']' : '') + ' $' + r.comp +
@@ -204,7 +211,8 @@ function doPost(e) {
     }).join('  ||  ');
 
     sheet.appendRow([
-      new Date(),
+      submissionId,
+      received,
       (d.submitter || {}).name || '',
       (d.submitter || {}).email || '',
       (b.city || '') + ' ' + (b.state || ''),
@@ -217,10 +225,11 @@ function doPost(e) {
       d.summary || ''
     ]);
 
+    appendRepDetail(ss, submissionId, received, d);
     appendNewReps(ss, d.reps || []);
     appendNewISPs(ss, d.newISPs || []);
 
-    return json({ ok: true });
+    return json({ ok: true, id: submissionId });
   } catch (err) {
     return json({ ok: false, error: String(err) });
   } finally {
@@ -274,6 +283,40 @@ function appendNewISPs(ss, newISPs) {
     sheet.appendRow([name, n.abbr || '', 'yes', n.repcol || '', n.ordernum || 'yes',
       n.phonebonus || '', n.meshbonus || '']);
     existing[name.toLowerCase()] = true;
+  });
+}
+
+// UNB-YYYYMMDD-NNN, where NNN is that day's sequence. Computed under the
+// script lock and before the new row is appended, so it never collides.
+function makeSubmissionId(subSheet, now) {
+  var pad2 = function (n) { return ('0' + n).slice(-2); };
+  var prefix = 'UNB-' + now.getFullYear() + pad2(now.getMonth() + 1) + pad2(now.getDate()) + '-';
+  var count = 0;
+  if (subSheet.getLastRow() > 1) {
+    var ids = subSheet.getRange(2, 1, subSheet.getLastRow() - 1, 1).getValues();
+    ids.forEach(function (r) { if (String(r[0]).indexOf(prefix) === 0) count++; });
+  }
+  return prefix + ('00' + (count + 1)).slice(-3);
+}
+
+// One row per rep on the "Rep detail" tab — payroll-friendly, with the
+// overrides that apply to each rep resolved onto their row.
+function appendRepDetail(ss, id, received, d) {
+  var reps = d.reps || [];
+  if (!reps.length) return;
+  var sheet = ensureTab(ss, 'Rep detail', REPDETAIL_HEADERS);
+  var b = d.blitz || {};
+  var blitz = (b.city || '') + ' ' + (b.state || '');
+  var isps = (d.isps || []).join(', ');
+  var overrides = d.overrides || [];
+  reps.forEach(function (r) {
+    var ov = overrides.filter(function (o) {
+      return o.scope === 'everyone' || (o.reps || []).indexOf(r.name) >= 0;
+    }).map(function (o) { return o.earner + ' $' + o.amount; }).join('; ');
+    sheet.appendRow([
+      id, received, blitz, b.start || '', b.end || '', b.manager || '', isps,
+      r.name || '', r.id || '', r.plan || '', r.comp || '', r.isNew ? 'yes' : '', ov
+    ]);
   });
 }
 

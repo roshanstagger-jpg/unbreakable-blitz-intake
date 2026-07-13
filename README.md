@@ -44,7 +44,9 @@ Fastest path — start from the prebuilt template:
      Email + Office columns and verifies the plan.
    - `CompPlans` — Sequifi's rate plans (Rate 150…375, 400 Sub, etc.); the form's comp dropdown reads this.
    - `ISPs` — the six ISPs + config columns; the form's ISP chips read this.
-   - `Submissions` — auto-fills, one row per blitz. `Instructions` — the CS guide.
+   - `Submissions` — auto-fills, one row per blitz, each with a unique `Submission ID` (UNB-YYYYMMDD-NNN).
+   - `Rep detail` — auto-fills, one row per rep per blitz (payroll-friendly), with the overrides that apply to each rep resolved onto their row.
+   - `Instructions` — the CS guide.
 
    The form pulls Roster, CompPlans, and ISPs live via `doGet`, so adding a rep, a rate plan, or an
    ISP is just adding a row — no code change. New reps / new ISPs submitted on the form append back
