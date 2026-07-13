@@ -30,9 +30,11 @@ var SUBMISSION_HEADERS = [
   'Manager overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
 ];
 var REPDETAIL_HEADERS = [
-  'Submission ID', 'Received', 'Blitz', 'Start', 'End', 'Manager', 'ISP(s)',
+  'Submission ID', 'Received', 'Blitz', 'Office', 'Start', 'End', 'Manager', 'ISP(s)',
   'Rep', 'UNB ID', 'Comp plan', 'Comp $', 'New rep?', 'Overrides on rep'
 ];
+var OFFICE_HEADERS = ['Office name', 'Active'];
+var BLITZ_HEADERS = ['Blitz name', 'Office', 'City', 'State', 'Start', 'End', 'Manager', 'ISP(s)', 'Active'];
 var CONFIG_HEADERS = ['Key', 'Value'];
 
 // Defaults seeded when a tab is created from a blank sheet (the .xlsx template
@@ -74,6 +76,8 @@ function setupSheet() {
   ensureTab(ss, 'Submissions', SUBMISSION_HEADERS);
   ensureTab(ss, 'Roster', ROSTER_HEADERS);
   ensureTab(ss, 'Rep detail', REPDETAIL_HEADERS);
+  ensureTab(ss, 'Blitzes', BLITZ_HEADERS);
+  ensureTab(ss, 'Offices', OFFICE_HEADERS);
   ensureTab(ss, 'CompPlans', COMPPLAN_HEADERS, DEFAULT_COMPPLANS);
   ensureTab(ss, 'ISPs', ISP_HEADERS, DEFAULT_ISPS);
   ensureTab(ss, 'Config', CONFIG_HEADERS);
@@ -114,6 +118,44 @@ function readISPs() {
     });
 }
 
+// Offices: from the Offices tab, or (if empty) the distinct Office values on Roster.
+function readOffices() {
+  var explicit = readRows('Offices')
+    .filter(function (r) { return String(r[0]).trim() !== '' && String(r[1]).toLowerCase() !== 'no'; })
+    .map(function (r) { return String(r[0]).trim(); });
+  if (explicit.length) return explicit;
+  var seen = {}, out = [];
+  readRoster().forEach(function (r) {
+    var o = String(r.office || '').trim();
+    if (o && !seen[o.toLowerCase()]) { seen[o.toLowerCase()] = true; out.push(o); }
+  });
+  return out;
+}
+
+// Blitzes the CS team maintains — the "add reps to existing blitz" picker reads this.
+function readBlitzes() {
+  return readRows('Blitzes')
+    .filter(function (r) { return String(r[0]).trim() !== '' && String(r[8]).toLowerCase() !== 'no'; })
+    .map(function (r) {
+      return {
+        name: r[0], office: r[1], city: r[2], state: r[3],
+        start: r[4], end: r[5], manager: r[6], isps: r[7]
+      };
+    });
+}
+
+// Register a newly-submitted blitz on the Blitzes tab (deduped by name) so it
+// shows up in the "add reps to existing blitz" picker without manual entry.
+function registerBlitz(ss, b, name) {
+  if (!name) return;
+  var sheet = ensureTab(ss, 'Blitzes', BLITZ_HEADERS);
+  var exists = false;
+  readRows('Blitzes').forEach(function (r) { if (String(r[0]).toLowerCase().trim() === name.toLowerCase().trim()) exists = true; });
+  if (exists) return;
+  sheet.appendRow([name, b.office || '', b.city || '', b.state || '',
+    b.start || '', b.end || '', b.manager || '', (b.isps || []).join(', '), 'yes']);
+}
+
 // Config is a simple Key/Value tab (e.g. logo -> data URL).
 function readConfig() {
   var out = {};
@@ -147,6 +189,8 @@ function doGet(e) {
       roster: readRoster(),
       compPlans: readCompPlans(),
       isps: readISPs(),
+      offices: readOffices(),
+      blitzes: readBlitzes(),
       config: readConfig()
     });
   }
@@ -190,6 +234,8 @@ function doPost(e) {
     var b = d.blitz || {};
     var received = new Date();
     var submissionId = makeSubmissionId(sheet, received);
+    var mode = d.mode || 'new';
+    var blitzName = (b.name || ((b.city || '') + ' ' + (b.state || ''))).trim();
 
     var reps = (d.reps || []).map(function (r) {
       return r.name + (r.id ? ' [' + r.id + ']' : '') + ' $' + r.comp +
@@ -215,7 +261,7 @@ function doPost(e) {
       received,
       (d.submitter || {}).name || '',
       (d.submitter || {}).email || '',
-      (b.city || '') + ' ' + (b.state || ''),
+      blitzName + (mode === 'addReps' ? '  (+reps added)' : ''),
       b.start || '', b.end || '',
       b.manager || '',
       (d.isps || []).join(', '),
@@ -225,9 +271,10 @@ function doPost(e) {
       d.summary || ''
     ]);
 
-    appendRepDetail(ss, submissionId, received, d);
+    appendRepDetail(ss, submissionId, received, d, blitzName);
     appendNewReps(ss, d.reps || []);
     appendNewISPs(ss, d.newISPs || []);
+    if (mode !== 'addReps') registerBlitz(ss, { office: b.office, city: b.city, state: b.state, start: b.start, end: b.end, manager: b.manager, isps: d.isps }, blitzName);
 
     return json({ ok: true, id: submissionId });
   } catch (err) {
@@ -301,12 +348,12 @@ function makeSubmissionId(subSheet, now) {
 
 // One row per rep on the "Rep detail" tab — payroll-friendly, with the
 // overrides that apply to each rep resolved onto their row.
-function appendRepDetail(ss, id, received, d) {
+function appendRepDetail(ss, id, received, d, blitzName) {
   var reps = d.reps || [];
   if (!reps.length) return;
   var sheet = ensureTab(ss, 'Rep detail', REPDETAIL_HEADERS);
   var b = d.blitz || {};
-  var blitz = (b.city || '') + ' ' + (b.state || '');
+  var office = b.office || '';
   var isps = (d.isps || []).join(', ');
   var overrides = d.overrides || [];
   reps.forEach(function (r) {
@@ -314,7 +361,7 @@ function appendRepDetail(ss, id, received, d) {
       return o.scope === 'everyone' || (o.reps || []).indexOf(r.name) >= 0;
     }).map(function (o) { return o.earner + ' $' + o.amount; }).join('; ');
     sheet.appendRow([
-      id, received, blitz, b.start || '', b.end || '', b.manager || '', isps,
+      id, received, blitzName, office, b.start || '', b.end || '', b.manager || '', isps,
       r.name || '', r.id || '', r.plan || '', r.comp || '', r.isNew ? 'yes' : '', ov
     ]);
   });

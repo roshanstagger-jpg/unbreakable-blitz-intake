@@ -57,6 +57,10 @@
   .chip{cursor:pointer;font-size:13px;padding:6px 13px;border-radius:20px;border:1px solid var(--line);
     background:transparent;color:var(--ink-2);user-select:none;transition:.12s;}
   .chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}
+  .modebar{display:flex; gap:6px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:5px; margin-top:16px; width:fit-content; max-width:100%;}
+  .mode{background:transparent; border:none; color:var(--ink-2); font-weight:600; padding:8px 16px; border-radius:8px;}
+  .mode.on{background:var(--accent-soft); color:var(--accent);}
+  .blitzinfo{background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; margin-top:8px; font-size:13px; color:var(--ink-2);}
   .list{display:flex;flex-direction:column;gap:7px;margin-top:6px;}
   .item{display:flex;align-items:center;gap:11px;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);}
   .item .nm{flex:1;font-size:14px;}
@@ -111,10 +115,25 @@
     </div>
   </div>
 
+  <div class="modebar" id="modebar">
+    <button class="mode on" data-mode="new">New blitz</button>
+    <button class="mode" data-mode="addReps">Add reps to existing</button>
+  </div>
+
+  <!-- EXISTING BLITZ (add-reps mode) -->
+  <section class="card" id="addBlitzCard" style="display:none;">
+    <h2>Existing blitz</h2>
+    <p class="hint">Pick the blitz you're adding reps to. Its details are pulled from the Blitzes tab.</p>
+    <label class="f">Blitz</label>
+    <select id="existingBlitz"></select>
+    <div class="blitzinfo" id="existingBlitzInfo" style="display:none;"></div>
+  </section>
+
   <!-- BLITZ DETAILS -->
-  <section class="card">
+  <section class="card" id="newBlitzCard">
     <h2>Blitz details</h2>
     <div class="grid">
+      <div><label class="f">Office</label><select id="office"></select></div>
       <div><label class="f">City</label><input id="city" placeholder="Geneva" /></div>
       <div><label class="f">State</label><input id="state" placeholder="NY" maxlength="2" style="text-transform:uppercase" /></div>
       <div><label class="f">Manager</label><input id="manager" placeholder="Calijah Hunter" /></div>
@@ -183,7 +202,7 @@
   </section>
 
   <!-- NEW ISP -->
-  <section class="card">
+  <section class="card" id="newIspCard">
     <label class="togglerow"><input type="checkbox" id="newIspToggle" /><span>This blitz uses a new ISP that isn’t set up yet</span></label>
     <div id="newIspCfg" style="display:none;margin-top:14px;">
       <div class="grid">
@@ -249,8 +268,24 @@
   ];
 
   var ISPS=DEFAULT_ISPS.slice(), COMPPLANS=DEFAULT_COMPPLANS.slice();
+  var OFFICES=[], BLITZES=[];
   var sheetUrl=localStorage.getItem(LS_URL)||new URLSearchParams(location.search).get("sheet")||"";
-  var selISPs=[], reps=[], ovrs=[];
+  var selISPs=[], reps=[], ovrs=[], mode="new";
+
+  function composeBlitzName(){
+    var loc=(($("city").value||"")+" "+($("state").value||"")).trim();
+    var off=$("office").value||"";
+    return off? (off+" · "+loc) : loc;
+  }
+  function splitCsv(s){ return String(s||"").split(",").map(function(x){return x.trim();}).filter(Boolean); }
+  function currentBlitz(){
+    if(mode==="addReps"){
+      var b=BLITZES[+($("existingBlitz").value)]; if(!b) return null;
+      return {name:b.name,office:b.office,city:b.city,state:b.state,start:b.start,end:b.end,manager:b.manager,notes:"",isps:splitCsv(b.isps)};
+    }
+    return {name:composeBlitzName(),office:$("office").value||"",city:$("city").value.trim(),state:$("state").value.trim().toUpperCase(),
+      start:$("start").value,end:$("end").value,manager:$("manager").value.trim(),notes:$("notes").value.trim(),isps:selISPs.slice()};
+  }
 
   function planRate(name){var p=COMPPLANS.filter(function(x){return x.name===name;})[0];return p?(+p.rate||0):0;}
   function populateCompSelects(){
@@ -283,6 +318,40 @@
   }
 
   /* ---------- render ---------- */
+  function populateOffices(){
+    var cur=$("office").value;
+    $("office").innerHTML='<option value="">— office —</option>'+OFFICES.map(function(o){return '<option value="'+esc(o)+'">'+esc(o)+'</option>';}).join("");
+    if(cur)$("office").value=cur;
+  }
+  function populateBlitzes(){
+    var sel=$("existingBlitz");
+    if(!BLITZES.length){ sel.innerHTML='<option value="">No blitzes yet — submit one first</option>'; return; }
+    var byOffice={};
+    BLITZES.forEach(function(b,i){ var k=b.office||"Other"; (byOffice[k]=byOffice[k]||[]).push({b:b,i:i}); });
+    var html='<option value="">— pick a blitz —</option>';
+    Object.keys(byOffice).forEach(function(off){
+      html+='<optgroup label="'+esc(off)+'">'+byOffice[off].map(function(x){
+        return '<option value="'+x.i+'">'+esc(x.b.name)+(x.b.start?" ("+esc(x.b.start)+")":"")+'</option>';}).join("")+'</optgroup>';
+    });
+    sel.innerHTML=html;
+  }
+  function showBlitzInfo(){
+    var b=BLITZES[+($("existingBlitz").value)], box=$("existingBlitzInfo");
+    if(!b){box.style.display="none";return;}
+    box.style.display="block";
+    box.textContent=[b.office,(b.city+" "+b.state).trim(),(b.start||"?")+"→"+(b.end||"?"),b.manager?("mgr "+b.manager):"",b.isps].filter(Boolean).join("  ·  ");
+  }
+  function setMode(m){
+    mode=m;
+    each($("modebar").children,function(el){ el.classList.toggle("on",el.getAttribute("data-mode")===m); });
+    var add=(m==="addReps");
+    $("addBlitzCard").style.display=add?"block":"none";
+    $("newBlitzCard").style.display=add?"none":"block";
+    $("newIspCard").style.display=add?"none":"block";
+    if(add) showBlitzInfo();
+    renderSummary();
+  }
+
   function renderChips(){
     $("ispChips").innerHTML=ISPS.map(function(n){
       var on=selISPs.indexOf(n)>=0;
@@ -328,11 +397,15 @@
     each(box.querySelectorAll("[data-rc]"),function(el){el.onclick=function(){el.classList.toggle("on");};});
   }
   function renderSummary(){
-    var L=[];
-    var loc=(($("city").value||"")+" "+($("state").value||"")).trim();
-    var dr=($("start").value||"?")+" → "+($("end").value||"?");
-    L.push((selISPs.join(", ")||"(no ISP)")+" · "+(loc||"(no location)")+" · "+dr);
-    if($("manager").value)L.push("Manager: "+$("manager").value);
+    var L=[]; var cb=currentBlitz();
+    if(mode==="addReps"){
+      L.push(cb?("Adding reps to: "+cb.name):"Pick a blitz above");
+      if(cb)L.push((cb.isps.join(", ")||"")+" · "+((cb.start||"?")+" → "+(cb.end||"?")));
+    } else {
+      var loc=((cb.city||"")+" "+(cb.state||"")).trim();
+      L.push((cb.isps.join(", ")||"(no ISP)")+" · "+(cb.name||loc||"(no location)")+" · "+((cb.start||"?")+" → "+(cb.end||"?")));
+      if(cb.manager)L.push("Manager: "+cb.manager);
+    }
     L.push("");
     L.push(reps.length+" reps:");
     reps.forEach(function(r){var pay=r.plan?r.plan+(r.comp?" ($"+r.comp+")":""):"$"+r.comp;
@@ -340,7 +413,7 @@
     if(ovrs.length){L.push("");L.push("Overrides:");
       ovrs.forEach(function(o){var sc=o.scope==="everyone"?"everyone going":(o.reps||[]).join(", ")||"specific";
         L.push("  • "+o.earner+" $"+o.amt+"/acct — "+sc);});}
-    if($("newIspToggle").checked&&$("ni_name").value)L.push("\nNew ISP: "+$("ni_name").value+" ("+$("ni_abbr").value+")");
+    if(mode!=="addReps"&&$("newIspToggle").checked&&$("ni_name").value)L.push("\nNew ISP: "+$("ni_name").value+" ("+$("ni_abbr").value+")");
     $("summary").textContent=L.join("\n");
   }
 
@@ -381,17 +454,22 @@
   ["city","state","start","end","manager","ni_name","ni_abbr","notes"].forEach(function(id){
     $(id).addEventListener("input",renderSummary);
   });
+  $("office").addEventListener("change",renderSummary);
+  each($("modebar").children,function(el){ el.onclick=function(){ setMode(el.getAttribute("data-mode")); }; });
+  $("existingBlitz").onchange=function(){ showBlitzInfo(); renderSummary(); };
 
   function payload(){
+    var cb=currentBlitz()||{};
     return {
+      mode:mode,
       submitter:{name:$("subName").value.trim(),email:$("subEmail").value.trim()},
-      blitz:{city:$("city").value.trim(),state:$("state").value.trim().toUpperCase(),
-        start:$("start").value,end:$("end").value,manager:$("manager").value.trim(),notes:$("notes").value.trim()},
-      isps:selISPs.slice(),
+      blitz:{name:cb.name||"",office:cb.office||"",city:cb.city||"",state:cb.state||"",
+        start:cb.start||"",end:cb.end||"",manager:cb.manager||"",notes:cb.notes||""},
+      isps:cb.isps||[],
       reps:reps.map(function(r){return {name:r.name,id:r.id||"",comp:r.comp,plan:r.plan||"",email:r.email||"",isNew:!!r.isNew,
         compChanged:false,previousComp:"",effectiveDate:""};}),
       overrides:ovrs.map(function(o){return {earner:o.earner,type:o.type,amount:o.amt,scope:o.scope,reps:o.reps||[]};}),
-      newISPs:$("newIspToggle").checked?[{name:$("ni_name").value.trim(),abbr:$("ni_abbr").value.trim(),
+      newISPs:(mode!=="addReps"&&$("newIspToggle").checked)?[{name:$("ni_name").value.trim(),abbr:$("ni_abbr").value.trim(),
         repcol:$("ni_repcol").value.trim(),ordernum:$("ni_order").value,
         phonebonus:+$("ni_phone").value||0,meshbonus:+$("ni_mesh").value||0}]:[],
       summary:$("summary").textContent
@@ -400,9 +478,12 @@
 
   $("submitBtn").onclick=function(){
     if(!sheetUrl){showConnect(true);toast("Connect your sheet first",true);return;}
-    if(!selISPs.length){toast("Pick at least one ISP",true);return;}
     if(!reps.length){toast("Add at least one rep",true);return;}
-    if(!$("city").value.trim()){toast("City is required",true);return;}
+    if(mode==="addReps"){ if(!$("existingBlitz").value){toast("Pick a blitz first",true);return;} }
+    else {
+      if(!selISPs.length){toast("Pick at least one ISP",true);return;}
+      if(!$("city").value.trim()){toast("City is required",true);return;}
+    }
     var btn=this; btn.disabled=true; var old=btn.textContent; btn.textContent="Submitting…";
     var body=JSON.stringify(payload());
     // No custom headers → "simple" request → no CORS preflight (Apps Script has no CORS headers).
@@ -465,13 +546,16 @@
             COMPPLANS=data.compPlans.map(function(p){return {name:p.name,rate:p.rate};});
           if(data.isps&&data.isps.length)
             ISPS=data.isps.map(function(i){return i.name;});
+          if(data.offices) OFFICES=data.offices;
+          if(data.blitzes) BLITZES=data.blitzes;
           if(data.config&&data.config.logo){ applyLogo(data.config.logo); localStorage.setItem(LS_LOGO,data.config.logo); }
-          renderRosterList();populateCompSelects();renderChips();
+          renderRosterList();populateCompSelects();populateOffices();populateBlitzes();renderChips();
+          if(mode==="addReps")showBlitzInfo(); renderSummary();
         }
         setConn("ok");
       }).catch(function(){ setConn("bad"); });
     }
-    renderChips();renderRosterList();populateCompSelects();renderReps();renderOvrs();renderSummary();
+    renderChips();renderRosterList();populateCompSelects();populateOffices();populateBlitzes();renderReps();renderOvrs();setMode("new");
   }
   init();
 })();

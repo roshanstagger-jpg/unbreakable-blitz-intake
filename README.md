@@ -44,6 +44,8 @@ Fastest path — start from the prebuilt template:
      Email + Office columns and verifies the plan.
    - `CompPlans` — Sequifi's rate plans (Rate 150…375, 400 Sub, etc.); the form's comp dropdown reads this.
    - `ISPs` — the six ISPs + config columns; the form's ISP chips read this.
+   - `Offices` — office list for the blitz Office dropdown (falls back to the Roster's Office column if empty).
+   - `Blitzes` — active blitzes; the "add reps to existing blitz" picker reads this. New blitzes submitted on the form auto-append here.
    - `Submissions` — auto-fills, one row per blitz, each with a unique `Submission ID` (UNB-YYYYMMDD-NNN).
    - `Rep detail` — auto-fills, one row per rep per blitz (payroll-friendly), with the overrides that apply to each rep resolved onto their row.
    - `Instructions` — the CS guide.
