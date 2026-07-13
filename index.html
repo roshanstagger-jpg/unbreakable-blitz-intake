@@ -269,7 +269,11 @@
 
   var ISPS=DEFAULT_ISPS.slice(), COMPPLANS=DEFAULT_COMPPLANS.slice();
   var OFFICES=[], BLITZES=[];
-  var sheetUrl=localStorage.getItem(LS_URL)||new URLSearchParams(location.search).get("sheet")||"";
+  // Built-in default so every browser/computer opens already connected (no manual
+  // "Connect" needed). A URL saved in this browser, or one passed via ?sheet=, wins.
+  // If you ever create a brand-new Apps Script deployment, update this URL.
+  var DEFAULT_SHEET_URL="https://script.google.com/macros/s/AKfycbwJoirmBwn2Bxm5lGHL-SZtFHNWiNdBrc3Z8vXPO-p3YOt2ulZZ7N-l-VoW5VSorqWF/exec";
+  var sheetUrl=localStorage.getItem(LS_URL)||new URLSearchParams(location.search).get("sheet")||DEFAULT_SHEET_URL;
   var selISPs=[], reps=[], ovrs=[], mode="new";
 
   function composeBlitzName(){
