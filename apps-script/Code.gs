@@ -27,7 +27,7 @@ var ISP_HEADERS = ['ISP name', 'Abbr', 'Active', 'Rep-ID column on report', 'Has
 var SUBMISSION_HEADERS = [
   'Submission ID', 'Received', 'Submitted by', 'Email', 'Blitz', 'Start', 'End',
   'Manager', 'ISP(s)', '# Reps', 'Reps (name / ID / comp / change)',
-  'Manager overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
+  'Manager / recruiter overrides', 'Divisional overrides', 'New ISPs', 'Notes', 'Full summary'
 ];
 var REPDETAIL_HEADERS = [
   'Submission ID', 'Received', 'Blitz', 'Office', 'Start', 'End', 'Manager', 'ISP(s)',
@@ -359,7 +359,7 @@ function appendRepDetail(ss, id, received, d, blitzName) {
   reps.forEach(function (r) {
     var ov = overrides.filter(function (o) {
       return o.scope === 'everyone' || (o.reps || []).indexOf(r.name) >= 0;
-    }).map(function (o) { return o.earner + ' $' + o.amount; }).join('; ');
+    }).map(function (o) { return o.earner + ' $' + o.amount + ovrTag(o.type); }).join('; ');
     sheet.appendRow([
       id, received, blitzName, office, b.start || '', b.end || '', b.manager || '', isps,
       r.name || '', r.id || '', r.plan || '', r.comp || '', r.isNew ? 'yes' : '', ov
@@ -369,7 +369,15 @@ function appendRepDetail(ss, id, received, d, blitzName) {
 
 function fmtOvr(o) {
   var scope = o.scope === 'specific' ? (o.reps || []).join(', ') : 'everyone going';
-  return o.earner + ' $' + o.amount + '/acct on ' + scope;
+  return o.earner + ' $' + o.amount + '/acct' + ovrTag(o.type) + ' on ' + scope;
+}
+
+// Labels recruiter overrides (recurring vs one-time). Manager/divisional need no
+// tag — the column they land in already implies it.
+function ovrTag(t) {
+  if (t === 'recruiter-recurring') return ' (recurring recruiter)';
+  if (t === 'recruiter-onetime') return ' (one-time recruiter)';
+  return '';
 }
 
 // tiny helper so a blank never prints "undefined"

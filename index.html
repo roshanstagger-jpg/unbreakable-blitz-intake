@@ -188,8 +188,8 @@
     <div class="list" id="ovrRows"></div>
     <div class="row" style="margin-top:10px;">
       <div><label class="f">Earner</label><input id="ovEarner" placeholder="Cal" /></div>
-      <div style="max-width:140px;"><label class="f">Type</label>
-        <select id="ovType"><option value="manager">Manager</option><option value="divisional">Divisional</option></select></div>
+      <div style="max-width:170px;"><label class="f">Type</label>
+        <select id="ovType"><option value="manager">Manager</option><option value="divisional">Divisional</option><option value="recruiter-recurring">Recruiter — recurring</option><option value="recruiter-onetime">Recruiter — one-time</option></select></div>
       <div style="max-width:100px;"><label class="f">$/acct</label><input type="number" id="ovAmt" value="50" min="0" step="5" /></div>
       <div style="max-width:150px;"><label class="f">Scope</label>
         <select id="ovScope"><option value="everyone">Everyone going</option><option value="specific">Specific reps</option></select></div>
@@ -374,11 +374,12 @@
     });
     renderOvrRepChips();
   }
+  function ovTypeLabel(t){return {"manager":"manager","divisional":"divisional","recruiter-recurring":"recurring recruiter","recruiter-onetime":"one-time recruiter"}[t]||t;}
   function renderOvrs(){
     $("ovrRows").innerHTML=ovrs.map(function(o,i){
       var sc=o.scope==="everyone"?"everyone going":(o.reps&&o.reps.length?o.reps.join(", "):"specific reps");
       return '<div class="item"><span class="nm">'+esc(o.earner)+' · $'+o.amt+'/acct</span>'+
-        '<span class="money">'+o.type+' · '+esc(sc)+'</span><span class="x" data-rmo="'+i+'">×</span></div>';
+        '<span class="money">'+esc(ovTypeLabel(o.type))+' · '+esc(sc)+'</span><span class="x" data-rmo="'+i+'">×</span></div>';
     }).join("");
     each($("ovrRows").querySelectorAll("[data-rmo]"),function(el){
       el.onclick=function(){ovrs.splice(+el.getAttribute("data-rmo"),1);renderOvrs();renderSummary();};
@@ -408,7 +409,7 @@
       L.push("  • "+r.name+(r.isNew?" (new)":" ["+(r.id||"—")+"]")+" — "+pay);});
     if(ovrs.length){L.push("");L.push("Overrides:");
       ovrs.forEach(function(o){var sc=o.scope==="everyone"?"everyone going":(o.reps||[]).join(", ")||"specific";
-        L.push("  • "+o.earner+" $"+o.amt+"/acct — "+sc);});}
+        L.push("  • "+o.earner+" $"+o.amt+"/acct ["+ovTypeLabel(o.type)+"] — "+sc);});}
     if(mode!=="addReps"&&$("newIspToggle").checked&&$("ni_name").value)L.push("\nNew ISP: "+$("ni_name").value+" ("+$("ni_abbr").value+")");
     $("summary").textContent=L.join("\n");
   }
